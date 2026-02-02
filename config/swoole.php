@@ -6,7 +6,20 @@ return [
         'host'       => '0.0.0.0',
         'port'       => 9501,
         'worker_num' => swoole_cpu_num(),
-        'options'    => [],
+        // 静态资源处理
+        'static_handler_locations' => ['/static', '/'],
+        'document_root' => root_path('public'),
+        'options'    => [
+            // 静态资源处理
+            'document_root' => root_path('public'),
+            'enable_static_handler' => true,
+        ],
+        // 关键：开启静态资源处理
+    'settings' => [
+        'document_root' => public_path(), // 指向 TP 的 public 目录
+        'enable_static_handler' => true,  // 允许 Swoole 处理静态资源
+        'static_handler_locations' => ['/'], // 匹配所有路径的静态资源
+    ],
     ],
     'websocket'  => [
         'enable'        => false,
@@ -48,7 +61,7 @@ return [
         'workers' => [],
     ],
     'hot_update' => [
-        'enable'  => env('APP_DEBUG', false),
+        'enable'  => env('APP_DEBUG', true),
         'name'    => ['*.php'],
         'include' => [app_path()],
         'exclude' => [],

@@ -1,0 +1,139 @@
+{extend name="admin/layout" /}
+
+{block name="header"}Role Management{/block}
+
+{block name="content"}
+<div class="card">
+    <div class="card-header">
+        <button class="btn btn-primary" onclick="addRole()"><i class="fas fa-plus"></i> Add Role</button>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Role Name</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="roleTable">
+                <!-- Data -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-role">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit Role</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="roleForm">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Role Name</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="desc" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Permissions (Menus)</label>
+                        <div id="menuCheckboxes" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Checkboxes loaded via JS -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveRole()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    let allMenus = [];
+    
+    $(function() {
+        // Load Menus first for the modal
+        $.get("{:url('system/menu')}", function(res) {
+            allMenus = res.data;
+            loadRoles();
+        });
+    });
+
+    function loadRoles() {
+        $.get("{:url('system/role')}", function(res) {
+            let html = '';
+            res.data.forEach(item => {
+                html += `<tr>
+                    <td>${item.id}</td>
+                    <td>${item.name}</td>
+                    <td>${item.desc}</td>
+                    <td>${item.status == 1 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-danger">Disabled</span>'}</td>
+                    <td>
+                        <button class="btn btn-xs btn-info" onclick='editRole(${JSON.stringify(item)})'>Edit</button>
+                    </td>
+                </tr>`;
+            });
+            $('#roleTable').html(html);
+        });
+    }
+
+    function buildMenuCheckboxes(data, pid, level, checkedIds) {
+        let html = '';
+        data.forEach(item => {
+            if (item.pid == pid) {
+                let margin = level * 20;
+                let checked = checkedIds.includes(String(item.id)) ? 'checked' : '';
+                html += `<div class="form-check" style="margin-left: ${margin}px;">
+                    <input class="form-check-input" type="checkbox" name="rules[]" value="${item.id}" ${checked}>
+                    <label class="form-check-label">${item.title}</label>
+                </div>`;
+                html += buildMenuCheckboxes(data, item.id, level + 1, checkedIds);
+            }
+        });
+        return html;
+    }
+
+    function addRole() {
+        $('#roleForm')[0].reset();
+        $('[name="id"]').val('');
+        $('#menuCheckboxes').html(buildMenuCheckboxes(allMenus, 0, 0, []));
+        $('#modal-role').modal('show');
+    }
+
+    function editRole(item) {
+        $('#roleForm')[0].reset();
+        for (let key in item) {
+            if(key !== 'rules') $(`[name="${key}"]`).val(item[key]);
+        }
+        
+        let rulesArr = item.rules ? item.rules.split(',') : [];
+        $('#menuCheckboxes').html(buildMenuCheckboxes(allMenus, 0, 0, rulesArr));
+        
+        $('#modal-role').modal('show');
+    }
+
+    function saveRole() {
+        $.post("{:url('system/role_save')}", $('#roleForm').serialize(), function(res) {
+            if (res.code == 1) {
+                $('#modal-role').modal('hide');
+                loadRoles();
+            } else {
+                alert(res.msg);
+            }
+        });
+    }
+</script>
+{/block}

@@ -1,0 +1,54 @@
+{extend name="index/layout" /}
+
+{block name="content"}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="d-flex justify-content-between mb-4">
+                <a href="{:url('Index/index')}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Home</a>
+                {if isset($next_article)}
+                <a href="{:url('Index/read', ['id'=>$next_article.id])}" class="btn btn-outline-primary">Next Article <i class="bi bi-arrow-right"></i></a>
+                {/if}
+            </div>
+            
+            <h1 class="display-3 fw-bold mb-4">{$article.title}</h1>
+            
+            <div class="d-flex align-items-center mb-5 border-bottom pb-4">
+                <img src="https://ui-avatars.com/api/?name={$article.author|default='U'}&background=random" class="rounded-circle me-3" width="50" height="50" alt="Author">
+                <div>
+                     <p class="mb-0 fw-bold">{$article.author|default='Anonymous'}</p>
+                     <small class="text-muted">Published on {$article.create_time|date='F j, Y'} &bull; {$article.category_name}</small>
+                </div>
+            </div>
+
+            <article class="blog-post">
+                {if !empty($article.thumb)}
+                <img src="{$article.thumb}" class="img-fluid rounded mb-5 w-100 shadow-sm" alt="{$article.title}">
+                {/if}
+                
+                <div class="lead mb-4 font-italic">
+                    {$article.desc}
+                </div>
+                
+                <hr class="my-5">
+                
+                <div class="content fs-5 text-dark" style="line-height: 1.8;">
+                   {$article.content|raw}
+                </div>
+            </article>
+
+             <hr class="my-5">
+
+             <div class="bg-light p-4 rounded text-center">
+                 <h4>Enjoyed this article?</h4>
+                 <p>Share it with your friends!</p>
+                 <div class="d-flex justify-content-center gap-2">
+                     <button class="btn btn-primary"><i class="bi bi-facebook"></i> Share</button>
+                     <button class="btn btn-info text-white"><i class="bi bi-twitter"></i> Tweet</button>
+                     <button class="btn btn-success"><i class="bi bi-whatsapp"></i> Whatsapp</button>
+                 </div>
+             </div>
+        </div>
+    </div>
+</div>
+{/block}

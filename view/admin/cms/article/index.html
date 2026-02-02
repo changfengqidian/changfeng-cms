@@ -1,0 +1,115 @@
+{extend name="admin/layout" /}
+
+{block name="header"}Article Management{/block}
+
+{block name="content"}
+<div class="card">
+    <div class="card-header">
+        <form class="form-inline" id="searchForm" onsubmit="return false;">
+            <div class="form-group mr-2">
+                <select name="cid" class="form-control">
+                    <option value="">All Categories</option>
+                    {volist name="cates" id="vo"}
+                    <option value="{$vo.id}">{$vo.name}</option>
+                    {if isset($vo.children)}
+                        {volist name="vo.children" id="sub"}
+                        <option value="{$sub.id}">&nbsp;&nbsp;├─ {$sub.name}</option>
+                        {/volist}
+                    {/if}
+                    {/volist}
+                </select>
+            </div>
+            <div class="form-group mr-2">
+                <input type="text" name="keywords" class="form-control" placeholder="Title Keyword">
+            </div>
+            <div class="form-group mr-2">
+                <select name="status" class="form-control">
+                    <option value="">Status (All)</option>
+                    <option value="1">Published</option>
+                    <option value="0">Draft</option>
+                    <option value="-1">Trash</option>
+                </select>
+            </div>
+            <button type="button" class="btn btn-default" onclick="loadArticles()"><i class="fas fa-search"></i></button>
+            <a href="{:url('cms.article/edit')}" class="btn btn-primary ml-auto"><i class="fas fa-plus"></i> Add Article</a>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th width="50">Img</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Views</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="articleTable">
+                <!-- Data -->
+            </tbody>
+        </table>
+        <div class="p-3" id="pagination">
+            <!-- Simple Pagination Buttons -->
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    let page = 1;
+    
+    $(function() {
+        loadArticles();
+    });
+
+    function loadArticles(p) {
+        if (p) page = p;
+        let data = $('#searchForm').serializeArray();
+        data.push({name: 'page', value: page});
+
+        $.get("{:url('cms.article/index')}", data, function(res) {
+            let html = '';
+            res.data.forEach(item => {
+                let statusBadge = '';
+                if(item.status == 1) statusBadge = '<span class="badge badge-success">Pub</span>';
+                else if(item.status == 0) statusBadge = '<span class="badge badge-secondary">Draft</span>';
+                else statusBadge = '<span class="badge badge-danger">Trash</span>';
+                
+                let thumb = item.thumb ? `<img src="${item.thumb}" style="height:30px">` : '-';
+                let date = new Date(item.update_time * 1000).toLocaleDateString();
+
+                html += `<tr>
+                    <td>${item.id}</td>
+                    <td>${thumb}</td>
+                    <td><a href="{:url('cms.article/edit')}?id=${item.id}">${item.title}</a></td>
+                    <td>${item.category_name || '-'}</td>
+                    <td>${item.views}</td>
+                    <td>${statusBadge}</td>
+                    <td>${date}</td>
+                    <td>
+                        <a class="btn btn-xs btn-info" href="{:url('cms.article/edit')}?id=${item.id}">Edit</a>
+                        ${item.status != -1 
+                          ? `<button class="btn btn-xs btn-danger" onclick="setStatus(${item.id}, -1)">Trash</button>` 
+                          : `<button class="btn btn-xs btn-success" onclick="setStatus(${item.id}, 1)">Restore</button>`
+                        }
+                    </td>
+                </tr>`;
+            });
+            $('#articleTable').html(html);
+        });
+    }
+
+    function setStatus(id, status) {
+        if(confirm(status == -1 ? 'Move to Trash?' : 'Restore this article?')) {
+            $.post("{:url('cms.article/set_status')}", {id: id, status: status}, function(res) {
+                loadArticles();
+            });
+        }
+    }
+</script>
+{/block}

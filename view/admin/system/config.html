@@ -1,0 +1,48 @@
+{extend name="admin/layout" /}
+
+{block name="header"}Site Configuration{/block}
+
+{block name="content"}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Basic Settings</h3>
+    </div>
+    <form id="configForm">
+        <div class="card-body">
+            {volist name="configs" id="vo"}
+            <div class="form-group row">
+                <label class="col-sm-2 col-form-label">{$vo.title}</label>
+                <div class="col-sm-10">
+                    {switch $vo.type}
+                        {case value="textarea"}
+                        <textarea class="form-control" name="{$vo.name}" rows="3">{$vo.value}</textarea>
+                        {/case}
+                        {default /}
+                        <input type="text" class="form-control" name="{$vo.name}" value="{$vo.value}">
+                    {/switch}
+                    <small class="form-text text-muted">Key: <code>{$vo.name}</code></small>
+                </div>
+            </div>
+            {/volist}
+        </div>
+        <div class="card-footer">
+            <button type="button" class="btn btn-primary" onclick="saveConfig()">Submit</button>
+        </div>
+    </form>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    function saveConfig() {
+        $.post("{:url('system/config')}", $('#configForm').serialize(), function(res) {
+            if (res.code == 1) {
+                alert('Configuration Saved!');
+                window.location.reload();
+            } else {
+                alert('Error');
+            }
+        });
+    }
+</script>
+{/block}

@@ -1,0 +1,201 @@
+{extend name="admin/layout" /}
+
+{block name="header"}Category Management{/block}
+
+{block name="content"}
+<div class="card">
+    <div class="card-header">
+        <button class="btn btn-primary" onclick="addCategory()"><i class="fas fa-plus"></i> Add Category</button>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Alias (URL)</th>
+                    <th>Sort</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="catTable">
+                <!-- Data -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modal-cat">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit Category</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="catForm">
+                    <input type="hidden" name="id">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                             <div class="form-group">
+                                <label>Parent Category</label>
+                                <select name="pid" id="pidSelect" class="form-control">
+                                    <option value="0">Top Level</option>
+                                    <!-- Options loaded via JS -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Category Name</label>
+                                <input type="text" name="name" class="form-control" placeholder="e.g. News" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Alias (Slug)</label>
+                                <input type="text" name="alias" class="form-control" placeholder="e.g. news">
+                            </div>
+                            <div class="form-group">
+                                <label>Sort</label>
+                                <input type="number" name="sort" class="form-control" value="50">
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select name="status" class="form-control">
+                                    <option value="1">Active</option>
+                                    <option value="0">Disabled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>SEO Title</label>
+                                <input type="text" name="seo_title" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>SEO Keywords</label>
+                                <input type="text" name="seo_keywords" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>SEO Description</label>
+                                <textarea name="seo_desc" class="form-control" rows="3"></textarea>
+                            </div>
+                             <div class="form-group">
+                                <label>Description</label>
+                                <textarea name="desc" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveCategory()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    let allCats = [];
+
+    $(function() {
+        loadCats();
+    });
+
+    function loadCats() {
+        $.get("{:url('cms.category/index')}", function(res) {
+            allCats = res.data;
+            let html = buildTreeHtml(allCats, 0, 0);
+            $('#catTable').html(html);
+        });
+    }
+
+    function buildTreeHtml(data, pid, level) {
+        let html = '';
+        data.forEach(item => {
+            if (item.pid == pid) {
+                let indent = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(level);
+                let folderIcon = level > 0 ? '↳ ' : '';
+                let statusBadge = item.status == 1 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Disabled</span>';
+                
+                html += `<tr>
+                    <td>${item.id}</td>
+                    <td>${indent}${folderIcon}${item.name}</td>
+                    <td>${item.alias}</td>
+                    <td>${item.sort}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-xs btn-info" onclick='editCategory(${JSON.stringify(item)})'>Edit</button>
+                        <button class="btn btn-xs btn-danger" onclick="delCategory(${item.id})">Delete</button>
+                    </td>
+                </tr>`;
+                html += buildTreeHtml(data, item.id, level + 1);
+            }
+        });
+        return html;
+    }
+
+    // Helper to populate PID select
+    function buildOptions(data, pid, level, currentId=null) {
+        let html = '';
+        data.forEach(item => {
+            if (item.id === currentId) return; // simple recursion check
+            if (item.pid == pid) {
+                let indent = '&nbsp;&nbsp;&nbsp;'.repeat(level);
+                html += `<option value="${item.id}">${indent}${item.name}</option>`;
+                html += buildOptions(data, item.id, level + 1, currentId);
+            }
+        });
+        return html;
+    }
+
+    function addCategory() {
+        $('#catForm')[0].reset();
+        $('[name="id"]').val('');
+        // rebuild pid select
+        let opts = `<option value="0">Top Level</option>` + buildOptions(allCats, 0, 0);
+        $('#pidSelect').html(opts);
+        
+        $('#modal-cat').modal('show');
+    }
+
+    function editCategory(item) {
+        $('#catForm')[0].reset();
+        for (let key in item) {
+            $(`[name="${key}"]`).val(item[key]);
+        }
+        
+        let opts = `<option value="0">Top Level</option>` + buildOptions(allCats, 0, 0, item.id);
+        $('#pidSelect').html(opts);
+        $('#pidSelect').val(item.pid);
+
+        $('#modal-cat').modal('show');
+    }
+
+    function saveCategory() {
+        $.post("{:url('cms.category/save')}", $('#catForm').serialize(), function(res) {
+            if (res.code == 1) {
+                $('#modal-cat').modal('hide');
+                loadCats();
+            } else {
+                alert(res.msg);
+            }
+        });
+    }
+
+    function delCategory(id) {
+        if(confirm('Are you sure?')) {
+            $.post("{:url('cms.category/delete')}", {id: id}, function(res) {
+                if (res.code == 1) {
+                    loadCats();
+                } else {
+                    alert(res.msg);
+                }
+            });
+        }
+    }
+</script>
+{/block}

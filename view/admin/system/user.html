@@ -1,0 +1,119 @@
+{extend name="admin/layout" /}
+
+{block name="header"}User Management{/block}
+
+{block name="content"}
+<div class="card">
+    <div class="card-header">
+        <button class="btn btn-primary" onclick="addUser()"><i class="fas fa-plus"></i> Add User</button>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Create Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="userTable">
+                <!-- Data -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modal-user">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit User</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" name="username" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="Leave blank to keep unchanged">
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select name="role_id" class="form-control">
+                            <option value="0">Guest</option>
+                            {volist name="roles" id="role"}
+                            <option value="{$role.id}">{$role.name}</option>
+                            {/volist}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    $(function() {
+        loadUsers();
+    });
+
+    function loadUsers() {
+        $.get("{:url('system/user')}", function(res) {
+            let html = '';
+            res.data.forEach(item => {
+                // simple date formatter
+                let date = new Date(item.create_time * 1000).toLocaleString();
+                let roleName = item.role_name || 'N/A';
+                
+                html += `<tr>
+                    <td>${item.id}</td>
+                    <td>${item.username}</td>
+                    <td><span class="badge badge-info">${roleName}</span></td>
+                    <td>${date}</td>
+                    <td>
+                        <button class="btn btn-xs btn-info" onclick='editUser(${JSON.stringify(item)})'>Edit</button>
+                    </td>
+                </tr>`;
+            });
+            $('#userTable').html(html);
+        });
+    }
+
+    function addUser() {
+        $('#userForm')[0].reset();
+        $('[name="id"]').val('');
+        $('#modal-user').modal('show');
+    }
+
+    function editUser(item) {
+        $('#userForm')[0].reset();
+        for (let key in item) {
+            if (key !== 'password') $(`[name="${key}"]`).val(item[key]);
+        }
+        $('#modal-user').modal('show');
+    }
+
+    function saveUser() {
+        $.post("{:url('system/user_save')}", $('#userForm').serialize(), function(res) {
+            if (res.code == 1) {
+                $('#modal-user').modal('hide');
+                loadUsers();
+            } else {
+                alert(res.msg);
+            }
+        });
+    }
+</script>
+{/block}

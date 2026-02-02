@@ -16,4 +16,5 @@ return [
     'expire'         => 1440,
     // 前缀
     'prefix'         => '',
+   
 ];

@@ -1,0 +1,147 @@
+{extend name="admin/layout" /}
+
+{block name="header"}Menu Management{/block}
+
+{block name="content"}
+<div class="card">
+    <div class="card-header">
+        <button class="btn btn-primary" onclick="addMenu()"><i class="fas fa-plus"></i> Add Menu</button>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Route/Name</th>
+                    <th>Icon</th>
+                    <th>Sort</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="menuTable">
+                <!-- Loaded via JS -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modal-menu">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Edit Menu</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="menuForm">
+                    <input type="hidden" name="id">
+                    <div class="form-group">
+                        <label>Parent ID</label>
+                        <input type="number" name="pid" class="form-control" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" name="title" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Route (e.g. admin/index)</label>
+                        <input type="text" name="name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Icon (FontAwesome)</label>
+                        <input type="text" name="icon" class="form-control" value="fas fa-circle">
+                    </div>
+                    <div class="form-group">
+                        <label>Sort</label>
+                        <input type="number" name="sort" class="form-control" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select name="type" class="form-control">
+                            <option value="1">Menu</option>
+                            <option value="2">Button/API</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveMenu()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{/block}
+
+{block name="script"}
+<script>
+    $(function() {
+        loadMenus();
+    });
+
+    function loadMenus() {
+        $.get("{:url('system/menu')}", function(res) {
+            let html = buildTreeHtml(res.data, 0, 0);
+            $('#menuTable').html(html);
+        });
+    }
+
+    function buildTreeHtml(data, pid, level) {
+        let html = '';
+        data.forEach(item => {
+            if (item.pid == pid) {
+                let indent = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(level);
+                let folderIcon = level > 0 ? '↳ ' : '';
+                html += `<tr>
+                    <td>${item.id}</td>
+                    <td>${indent}${folderIcon}<i class="${item.icon}"></i> ${item.title}</td>
+                    <td>${item.name}</td>
+                    <td><i class="${item.icon}"></i></td>
+                    <td>${item.sort}</td>
+                    <td>
+                        <button class="btn btn-xs btn-info" onclick='editMenu(${JSON.stringify(item)})'>Edit</button>
+                        <button class="btn btn-xs btn-danger" onclick="delMenu(${item.id})">Delete</button>
+                    </td>
+                </tr>`;
+                html += buildTreeHtml(data, item.id, level + 1);
+            }
+        });
+        return html;
+    }
+
+    function addMenu() {
+        $('#menuForm')[0].reset();
+        $('[name="id"]').val('');
+        $('#modal-menu').modal('show');
+    }
+
+    function editMenu(item) {
+        $('#menuForm')[0].reset();
+        for (let key in item) {
+            $(`[name="${key}"]`).val(item[key]);
+        }
+        $('#modal-menu').modal('show');
+    }
+
+    function saveMenu() {
+        $.post("{:url('system/menu_save')}", $('#menuForm').serialize(), function(res) {
+            if (res.code == 1) {
+                $('#modal-menu').modal('hide');
+                loadMenus();
+            } else {
+                alert(res.msg);
+            }
+        });
+    }
+    
+    function delMenu(id) {
+        if(confirm('Delete this menu?')) {
+            $.post("{:url('system/menu_del')}", {id: id}, function(res) {
+                 loadMenus();
+            });
+        }
+    }
+</script>
+{/block}

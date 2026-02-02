@@ -7,6 +7,8 @@ Thumbs.db
 /.idea
 /.vscode
 /vendor
+/runtime
+/testdb.php
 /.settings
 /.buildpath
 /.project

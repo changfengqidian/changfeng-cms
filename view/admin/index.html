@@ -1,0 +1,63 @@
+{extend name="admin/layout" /}
+
+{block name="header"}Dashboard{/block}
+
+{block name="content"}
+<div class="row">
+    <!-- User Count -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>{$stats.user_count}</h3>
+                <p>Total Users</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <a href="{:url('system/user')}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    
+    <!-- Rule Count -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>{$stats.menu_count}</h3>
+                <p>Menu Nodes</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-network-wired"></i>
+            </div>
+            <a href="{:url('system/menu')}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+    
+    <!-- Role Count -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>{$stats.role_count}</h3>
+                <p>Roles</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-user-tag"></i>
+            </div>
+            <a href="{:url('system/role')}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+
+    <!-- System Info -->
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>TP{$stats.tp_ver}</h3>
+                <p>PHP: {$stats.php_ver} | Swoole: {$stats.swoole_ver}</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-server"></i>
+            </div>
+            <a href="#" class="small-box-footer">System Info <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+    </div>
+</div>
+{/block}
